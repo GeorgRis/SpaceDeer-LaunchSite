@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpaceDeer | Orbital Telemetry</title>
+  <meta name="description" content="Precision satellite tracking and landscape intelligence for reindeer husbandry." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap"
+    rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <div class="hero-background">
+    <canvas id="agri-reindeer-canvas"></canvas>
+    <div class="hero-overlay"></div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">SpaceDeer</div>
+      <nav class="nav-glass">
+        <a href="#hero" class="active">Overview</a>
+        <a href="#platform">Platform</a>
+        <a href="#mission">Mission</a>
+        <a href="#team">Team</a>
+      </nav>
+      <div class="header-action">
+        <a href="#contact" class="nav-contact">Contact</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="hero" id="hero">
+    <div class="hero-content fade-up">
+      <h1 class="hero-title">Track reindeer<br>from space.</h1>
+      <p class="hero-subtitle">Guiding the future of sustainable grazing. We are building the world's most advanced
+        satellite platform for Arctic herd management.</p>
+
+      <div class="hero-actions">
+        <a href="#contact" class="btn-primary">Request Demo</a>
+      </div>
+    </div>
+  </main>
+
+  <section class="platform-section" id="platform">
+    <div class="section-inner">
+
+      <h2 class="section-heading fade-up">Landscape intelligence. Not just location.</h2>
+
+      <div class="bento-grid">
+
+        <div class="bento-card bento-wide fade-up">
+          <div class="bento-visual bg-map">
+            <div class="ui-mockup-map">
+              <div class="herd-dot d1"></div>
+              <div class="herd-dot d2"></div>
+              <div class="herd-dot d3"></div>
+              <div class="ui-status-pill">
+                <span class="live-indicator"></span> 320 Active Signals
+              </div>
+            </div>
+          </div>
+          <div class="bento-text">
+            <h3>Hardware-Free Monitoring</h3>
+            <p>Unlike traditional GPS collars that only track a handful of animals, our platform provides comprehensive
+              landscape intelligence without requiring physical infrastructure or additional hardware.</p>
+          </div>
+        </div>
+
+        <div class="bento-card bento-tall fade-up delay-1">
+          <div class="bento-visual centered-visual bg-route">
+            <div class="ui-mockup-route">
+              <div class="route-node past"></div>
+              <div class="route-line past"></div>
+              <div class="route-node current">
+                <div class="ping-ring"></div>
+              </div>
+              <div class="route-line future"></div>
+              <div class="route-node future"></div>
+              <div class="ui-label">Predicted Trajectory</div>
+            </div>
+          </div>
+          <div class="bento-text">
+            <h3>Predictive Routing</h3>
+            <p>We combine historical migration patterns with real-time terrain data to anticipate where your herd will
+              move next—saving you days of fuel and manual searching.</p>
+          </div>
+        </div>
+
+        <div class="bento-card bento-full fade-up delay-2">
+          <div class="bento-text">
+            <h3>Actionable Earth Observation</h3>
+            <p>We turn raw satellite data into clarity. By processing Copernicus imagery and NDVI vegetation indices, we
+              give you a precise, daily picture of grazing quality beneath the snow cover.</p>
+          </div>
+          <div class="bento-visual bg-scan">
+            <div class="ui-mockup-scan">
+              <div class="scan-gradient"></div>
+              <div class="scan-laser"></div>
+              <div class="scan-data-card">
+                <div class="data-row"><span>NDVI Index</span><span class="val-green">0.82 High</span></div>
+                <div class="data-row"><span>Soil Moisture</span><span class="val-blue">44% Optimal</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section" id="mission">
+    <div class="section-inner fade-up">
+      <h2 class="content-heading" style="margin-bottom: 3rem;">Global reach, local precision.</h2>
+
+      <div class="content-split">
+        <div class="content-visual">
+          <img src="reinsdyr.jpg"
+            alt="Reindeer herd in Norway" class="mission-image">
+        </div>
+
+        <div class="content-right">
+          <p>Managing herds across the Arctic tundra has always been a battle against time, extreme weather, and vast
+            distances. We bridge the gap between aerospace engineering and traditional herd management by solving three
+            core challenges:</p>
+          <br>
+          <p><strong style="color: #fff;">1. Vast Distances:</strong> Stop relying solely on fuel-heavy snowmobile trips
+            and manual field observations to locate your animals.</p>
+          <p><strong style="color: #fff;">2. Blind Spots:</strong> Traditional GPS collars only track a few animals and
+            provide zero information about forage quality. We monitor the entire landscape.</p>
+          <p><strong style="color: #fff;">3. Climate Uncertainty:</strong> Adapt to changing snow conditions and
+            unpredictable vegetation growth with real-time orbit data.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="team-section" id="team">
+    <div class="section-inner fade-up">
+      <div class="team-header">
+        <h2 class="content-heading">Built by experts.</h2>
+        <p class="team-lead">Backed by Norinnova and Arctic Ignite. A multidisciplinary team spanning reindeer
+          husbandry, scalable software engineering, and geospatial analytics.</p>
+      </div>
+
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar-wrapper">
+            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&auto=format&fit=crop"
+              alt="Per Christian Wahl Schjølberg" class="team-avatar">
+          </div>
+          <h4 class="team-name">Per Christian Wahl Schjølberg</h4>
+          <p class="team-role">CEO / Product Lead</p>
+          <p class="team-bio">Sámi entrepreneur from Senja with deep domain expertise in reindeer husbandry. Leads our
+            product vision, customer dialogue, and business development.</p>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar-wrapper">
+            <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=400&auto=format&fit=crop"
+              alt="Georg Risøy" class="team-avatar">
+          </div>
+          <h4 class="team-name">Georg Risøy</h4>
+          <p class="team-role">CTO / Software Engineer</p>
+          <p class="team-bio">Architect of the SpaceDeer cloud infrastructure. Responsible for backend systems,
+            satellite data processing, and scalable platform architecture.</p>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar-wrapper">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop"
+              alt="Sara Julia Bajardo" class="team-avatar">
+          </div>
+          <h4 class="team-name">Sara Julia Bajardo</h4>
+          <p class="team-role">GIS & Data Engineer</p>
+          <p class="team-bio">Transforms complex Earth observation data into clear, actionable maps. She leads our
+            geospatial analysis, ensuring our terrain and vegetation insights are highly accurate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer" id="contact">
+    <div class="footer-inner">
+      <div class="footer-left">© 2026 SpaceDeer — <a href="mailto:operations@spacedeer.no">operations@spacedeer.no</a>
+      </div>
+      <div class="footer-right">Tromsø, Norway — UiT Space Hackathon Winners</div>
+    </div>
+  </footer>
+
+  <script src="reindeer-bg.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>
