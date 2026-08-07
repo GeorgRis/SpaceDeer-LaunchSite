@@ -72,5 +72,26 @@
         }
       });
     });
+
+    // Theme Switcher Logic
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const getSavedTheme = () => localStorage.getItem('spacedeer-theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    
+    const setTheme = (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('spacedeer-theme', theme);
+      window.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
+    };
+
+    // Initialize saved or preferred theme
+    setTheme(getSavedTheme());
+
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setTheme(nextTheme);
+      });
+    }
   });
 })();

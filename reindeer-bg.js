@@ -53,15 +53,20 @@
   }
 
   /* ─── RESIZE ─── */
+  let resizeTimer = null;
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth;
     H = window.innerHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = W + 'px';
+    canvas.width  = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width  = W + 'px';
     canvas.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Rebuild herd positions to match new canvas width
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(buildHerds, 150);
   }
 
   /* ─── HERDS ─── */
@@ -100,52 +105,226 @@
   }
 
   /* ─── LOOP ─── */
+  function isLightMode() {
+    return document.documentElement.getAttribute('data-theme') === 'light';
+  }
+
   function loop() {
     time += 1 / 60;
     ctx.clearRect(0, 0, W, H);
+    const light = isLightMode();
 
-    drawSky();
-    drawAurora();
-    drawStars();
+    drawSky(light);
+    if (!light) {
+      drawAurora();
+      drawStars();
+    } else {
+      drawSunGlow();
+    }
+    // Satellite orbit
+    drawSatelliteOrbit(light);
 
     // Distant mountains
-    drawMountains();
+    drawMountains(light);
 
     // Layer 0 — far pasture
-    drawHillFill(0, '#1a2b24', '#12201a');
-    drawGrassTexture(0);
-    drawHerd(0);
+    if (light) {
+      drawHillFill(0, '#8FA8BF', '#7A96AE');
+    } else {
+      drawHillFill(0, '#1a2b24', '#12201a');
+    }
+    drawGrassTexture(0, light);
+    drawHerd(0, light);
 
     // Gentle mist between layers
-    drawMist(H * 0.58, 0.08);
+    drawMist(H * 0.58, light ? 0.15 : 0.08, light);
 
     // Layer 1 — mid pasture
-    drawHillFill(1, '#1e3328', '#152a1f');
-    drawGrassTexture(1);
-    drawHerd(1);
+    if (light) {
+      drawHillFill(1, '#A8BCCE', '#8FA8BF');
+    } else {
+      drawHillFill(1, '#1e3328', '#152a1f');
+    }
+    drawGrassTexture(1, light);
+    drawHerd(1, light);
 
-    drawMist(H * 0.72, 0.06);
+    drawMist(H * 0.72, light ? 0.12 : 0.06, light);
 
     // Layer 2 — foreground
-    drawHillFill(2, '#243d2e', '#1a3024');
-    drawGrassTexture(2);
-    drawHerd(2);
+    if (light) {
+      drawHillFill(2, '#BACCDC', '#A8BCCE');
+    } else {
+      drawHillFill(2, '#243d2e', '#1a3024');
+    }
+    drawGrassTexture(2, light);
+    drawHerd(2, light);
 
-    drawSnowfall();
+    drawSnowfall(light);
 
     requestAnimationFrame(loop);
   }
 
-  /* ─── SKY — warm Arctic twilight ─── */
-  function drawSky() {
+  /* ─── SKY ─── */
+  function drawSky(light) {
     const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0a0e14');
-    g.addColorStop(0.25, '#0f1820');
-    g.addColorStop(0.45, '#162030');
-    g.addColorStop(0.6, '#1a2a28');
-    g.addColorStop(1, '#1a2b24');
+    if (light) {
+      g.addColorStop(0, '#A8BCCE');
+      g.addColorStop(0.35, '#BACCDC');
+      g.addColorStop(0.7, '#C8D6E5');
+      g.addColorStop(1, '#C8D6E5');
+    } else {
+      g.addColorStop(0, '#0a0e14');
+      g.addColorStop(0.25, '#0f1820');
+      g.addColorStop(0.45, '#162030');
+      g.addColorStop(0.6, '#1a2a28');
+      g.addColorStop(1, '#1a2b24');
+    }
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ─── SATELLITE ORBIT ─── */
+  function drawSatelliteOrbit(light) {
+    ctx.save();
+
+    // Clip to sky area only — satellite never goes below the horizon
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H * 0.52);
+    ctx.clip();
+
+    // Orbit ellipse: wide and gently tilted across the upper sky
+    const cx    = W * 0.5;
+    const cy    = H * 0.14;
+    const rx    = W * 0.44;   // horizontal radius
+    const ry    = H * 0.085;  // vertical radius
+    const tilt  = -0.12;      // slight CCW tilt in radians
+
+    // Helper: get canvas x,y for a given orbit angle
+    function orbitPt(a) {
+      const lx = Math.cos(a) * rx;
+      const ly = Math.sin(a) * ry;
+      return {
+        x: cx + lx * Math.cos(tilt) - ly * Math.sin(tilt),
+        y: cy + lx * Math.sin(tilt) + ly * Math.cos(tilt)
+      };
+    }
+
+    // Satellite angle (slow orbit, ~25 sec per lap)
+    const satAngle = (time * 0.25) % (Math.PI * 2);
+
+    // ── Full orbit path (faint dashed ring) ──
+    ctx.beginPath();
+    for (let i = 0; i <= 360; i++) {
+      const p = orbitPt((i / 360) * Math.PI * 2);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = light ? 'rgba(20, 70, 120, 0.12)' : 'rgba(56, 189, 248, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 10]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── Glowing trail (segments with fading alpha behind satellite) ──
+    const trailLen   = Math.PI * 0.5;
+    const trailSteps = 50;
+    const trailRGB   = light ? '3, 105, 161' : '56, 189, 248';
+    const trailMax   = light ? 0.22 : 0.38;
+
+    for (let i = 0; i < trailSteps - 1; i++) {
+      const frac0 = i / trailSteps;
+      const frac1 = (i + 1) / trailSteps;
+      const a0 = satAngle - trailLen + trailLen * frac0;
+      const a1 = satAngle - trailLen + trailLen * frac1;
+      const p0 = orbitPt(a0);
+      const p1 = orbitPt(a1);
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.strokeStyle = `rgba(${trailRGB}, ${frac1 * trailMax})`;
+      ctx.lineWidth = 1.5 + frac1;
+      ctx.stroke();
+    }
+
+    // ── Satellite body ──
+    const sat = orbitPt(satAngle);
+    const sx = sat.x, sy = sat.y;
+
+    // Signal beam (cone pointing toward tundra below)
+    const beamLen = Math.min(H * 0.38, 160);
+    const beamGrad = ctx.createLinearGradient(sx, sy, sx, sy + beamLen);
+    const beamRGB = light ? '3, 105, 161' : '56, 189, 248';
+    beamGrad.addColorStop(0, `rgba(${beamRGB}, 0.18)`);
+    beamGrad.addColorStop(1, `rgba(${beamRGB}, 0)`);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx - 22, sy + beamLen);
+    ctx.lineTo(sx + 22, sy + beamLen);
+    ctx.closePath();
+    ctx.fillStyle = beamGrad;
+    ctx.fill();
+
+    // Glow halo around satellite
+    const haloRGB = light ? '3, 105, 161' : '56, 189, 248';
+    const halo = ctx.createRadialGradient(sx, sy, 2, sx, sy, 16);
+    halo.addColorStop(0, `rgba(${haloRGB}, 0.4)`);
+    halo.addColorStop(1, `rgba(${haloRGB}, 0)`);
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 16, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // Solar panels
+    const panelFill = light ? '#1E3A5F' : '#0EA5E9';
+    const panelLine = light ? '#0F172A' : '#0369A1';
+    [-1, 1].forEach(side => {
+      const px = side === -1 ? -18 : 8;
+      ctx.fillStyle = panelFill;
+      ctx.fillRect(px, -3, 10, 6);
+      // Panel cell lines
+      ctx.fillStyle = panelLine;
+      ctx.fillRect(px,     -3, 2, 6);
+      ctx.fillRect(px + 4, -3, 2, 6);
+    });
+
+    // Body
+    ctx.fillStyle = light ? '#334155' : '#94A3B8';
+    ctx.beginPath();
+    ctx.roundRect(-5, -4, 10, 8, 2);
+    ctx.fill();
+    ctx.fillStyle = light ? '#64748B' : '#E2E8F0';
+    ctx.fillRect(-2, -4, 2, 8); // highlight stripe
+
+    // Antenna + tip dot
+    ctx.strokeStyle = light ? '#475569' : '#94A3B8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -4);
+    ctx.lineTo(0, -11);
+    ctx.stroke();
+    ctx.fillStyle = light ? `rgba(3, 105, 161, 1)` : `rgba(56, 189, 248, 1)`;
+    ctx.beginPath();
+    ctx.arc(0, -12, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  /* ─── SUN GLOW (Light mode) ─── */
+  function drawSunGlow() {
+    ctx.save();
+    const g = ctx.createRadialGradient(W * 0.75, H * 0.25, 10, W * 0.75, H * 0.25, 300);
+    g.addColorStop(0, 'rgba(254, 243, 199, 0.45)');
+    g.addColorStop(0.4, 'rgba(224, 242, 254, 0.2)');
+    g.addColorStop(1, 'rgba(240, 249, 255, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   }
 
   /* ─── AURORA — soft organic ribbons ─── */
@@ -203,7 +382,7 @@
   }
 
   /* ─── DISTANT MOUNTAINS ─── */
-  function drawMountains() {
+  function drawMountains(light) {
     ctx.save();
     // Far mountain range silhouette
     ctx.beginPath();
@@ -218,8 +397,13 @@
     ctx.lineTo(W + 5, H);
     ctx.closePath();
     const mg = ctx.createLinearGradient(0, H * 0.3, 0, H * 0.6);
-    mg.addColorStop(0, '#141f1c');
-    mg.addColorStop(1, '#0f1a16');
+    if (light) {
+      mg.addColorStop(0, '#6A8AA5');
+      mg.addColorStop(1, '#8FA8BF');
+    } else {
+      mg.addColorStop(0, '#141f1c');
+      mg.addColorStop(1, '#0f1a16');
+    }
     ctx.fillStyle = mg;
     ctx.fill();
 
@@ -230,7 +414,6 @@
         + Math.sin(x * 0.001 + 1.2) * 60
         + Math.cos(x * 0.003 + 0.5) * 30
         + Math.sin(x * 0.007) * 12;
-      const capH = 8 + Math.sin(x * 0.005) * 5;
       if (x === -5) ctx.moveTo(x, baseY);
       else ctx.lineTo(x, baseY);
     }
@@ -242,7 +425,7 @@
       ctx.lineTo(x, baseY - 6 - Math.max(0, Math.sin(x * 0.005)) * 8);
     }
     ctx.closePath();
-    ctx.fillStyle = 'rgba(200, 210, 220, 0.08)';
+    ctx.fillStyle = light ? 'rgba(255, 255, 255, 0.7)' : 'rgba(200, 210, 220, 0.08)';
     ctx.fill();
 
     ctx.restore();
@@ -265,7 +448,7 @@
   }
 
   /* ─── GRASS TEXTURE — subtle organic lines ─── */
-  function drawGrassTexture(ridge) {
+  function drawGrassTexture(ridge, light) {
     ctx.save();
     const spacing = ridge === 2 ? 6 : ridge === 1 ? 10 : 16;
     const grassCount = Math.floor(W / spacing);
@@ -281,7 +464,7 @@
       const windSway = Math.sin(time * 1.5 + bx * 0.01) * 2;
 
       const alpha = ridge === 2 ? 0.18 : ridge === 1 ? 0.12 : 0.07;
-      ctx.strokeStyle = `rgba(90, 140, 100, ${alpha})`;
+      ctx.strokeStyle = light ? `rgba(71, 85, 105, ${alpha * 1.2})` : `rgba(90, 140, 100, ${alpha})`;
       ctx.beginPath();
       ctx.moveTo(bx, by);
       ctx.quadraticCurveTo(bx + windSway, by - grassH * 0.6, bx + windSway * 1.5, by - grassH);
@@ -291,20 +474,21 @@
   }
 
   /* ─── MIST / FOG LAYERS ─── */
-  function drawMist(baseY, alpha) {
+  function drawMist(baseY, alpha, light) {
     ctx.save();
     const drift = Math.sin(time * 0.3) * 20;
     const g = ctx.createLinearGradient(0, baseY - 30, 0, baseY + 40);
-    g.addColorStop(0, `rgba(180, 200, 190, 0)`);
-    g.addColorStop(0.5, `rgba(180, 200, 190, ${alpha})`);
-    g.addColorStop(1, `rgba(180, 200, 190, 0)`);
+    const color = light ? '255, 255, 255' : '180, 200, 190';
+    g.addColorStop(0, `rgba(${color}, 0)`);
+    g.addColorStop(0.5, `rgba(${color}, ${alpha})`);
+    g.addColorStop(1, `rgba(${color}, 0)`);
     ctx.fillStyle = g;
     ctx.fillRect(drift - 30, baseY - 30, W + 60, 70);
     ctx.restore();
   }
 
   /* ─── HERD ─── */
-  function drawHerd(ridge) {
+  function drawHerd(ridge, light) {
     herds.forEach(d => {
       if (d.ridge !== ridge) return;
 
@@ -320,12 +504,12 @@
         d.grazeT = d.grazing ? 180 + Math.random() * 300 : 350 + Math.random() * 500;
       }
 
-      drawDeer(d.x, ridgeY(d.x, d.ridge), d, ridge);
+      drawDeer(d.x, ridgeY(d.x, d.ridge), d, ridge, light);
     });
   }
 
   /* ─── NATURAL REINDEER SILHOUETTE ─── */
-  function drawDeer(x, y, d, ridge) {
+  function drawDeer(x, y, d, ridge, light) {
     ctx.save();
     ctx.translate(x, y);
     const s = d.scale;
@@ -341,14 +525,24 @@
     const bl = Math.sin(walk + Math.PI * 0.55) * 0.36;
     const br = Math.sin(walk + Math.PI * 1.55) * 0.36;
 
-    // Colors — warm earthy browns per layer depth
+    // Colors — per layer depth & theme
     let bodyColor, darkColor, lightColor, antlerColor;
-    if (ridge === 0) {
-      bodyColor = '#2a3d32'; darkColor = '#1f2e26'; lightColor = '#354a3c'; antlerColor = '#4a6050';
-    } else if (ridge === 1) {
-      bodyColor = '#3a5244'; darkColor = '#2d4237'; lightColor = '#4a6454'; antlerColor = '#6a8a70';
+    if (light) {
+      if (ridge === 0) {
+        bodyColor = '#475569'; darkColor = '#334155'; lightColor = '#64748B'; antlerColor = '#1E293B';
+      } else if (ridge === 1) {
+        bodyColor = '#334155'; darkColor = '#1E293B'; lightColor = '#475569'; antlerColor = '#0F172A';
+      } else {
+        bodyColor = '#1E293B'; darkColor = '#0F172A'; lightColor = '#334155'; antlerColor = '#020617';
+      }
     } else {
-      bodyColor = '#4a6455'; darkColor = '#3a5446'; lightColor = '#5a7666'; antlerColor = '#8aaa8a';
+      if (ridge === 0) {
+        bodyColor = '#2a3d32'; darkColor = '#1f2e26'; lightColor = '#354a3c'; antlerColor = '#4a6050';
+      } else if (ridge === 1) {
+        bodyColor = '#3a5244'; darkColor = '#2d4237'; lightColor = '#4a6454'; antlerColor = '#6a8a70';
+      } else {
+        bodyColor = '#4a6455'; darkColor = '#3a5446'; lightColor = '#5a7666'; antlerColor = '#8aaa8a';
+      }
     }
 
     ctx.lineCap = 'round';
@@ -432,12 +626,11 @@
     ctx.lineTo(hdX - 6, hdY - 8);
     ctx.stroke();
 
-    // --- Antlers (Sweeping C-shape characteristic of reindeer) ---
+    // --- Antlers ---
     ctx.strokeStyle = antlerColor;
     ctx.lineWidth = 1.8;
     const ax = hdX - 3, ay = hdY - 4;
     ctx.beginPath();
-    // Main beam sweeps back, then curves forward and up
     ctx.moveTo(ax, ay);
     ctx.quadraticCurveTo(ax - 8, ay - 12, ax - 2, ay - 24);
     ctx.quadraticCurveTo(ax + 4, ay - 32, ax + 14, ay - 34);
@@ -453,7 +646,7 @@
     ctx.moveTo(ax + 5, ay - 28);
     ctx.lineTo(ax + 10, ay - 32);
     
-    // Brow tine (sweeps forward over the nose)
+    // Brow tine
     ctx.moveTo(ax, ay - 2);
     ctx.quadraticCurveTo(ax + 8, ay - 4, ax + 12, ay - 2);
     ctx.moveTo(ax + 6, ay - 3);
@@ -499,7 +692,7 @@
   }
 
   /* ─── SNOWFALL ─── */
-  function drawSnowfall() {
+  function drawSnowfall(light) {
     snowflakes.forEach(s => {
       s.x += s.vx + Math.sin(time * 0.8 + s.drift) * 0.00015;
       s.y += s.vy;
@@ -508,7 +701,7 @@
       if (s.x < -0.02) s.x = 1.02;
       if (s.x > 1.02) s.x = -0.02;
 
-      ctx.fillStyle = `rgba(220, 230, 240, ${s.alpha})`;
+      ctx.fillStyle = light ? `rgba(100, 116, 139, ${s.alpha * 0.6})` : `rgba(220, 230, 240, ${s.alpha})`;
       ctx.beginPath();
       ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
       ctx.fill();
